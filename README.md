@@ -1,6 +1,6 @@
 # Tugas Proyek Struktur Data Semester 4
 
-**Kelompok:** 4. 6  
+**Kelompok:** 4.6  
 **Anggota:**  
 - Adillah Ridwan [M0403241072]
 - Tesalonika Natalie Sofi Siregar [M0403241185]  
