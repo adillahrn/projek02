@@ -1,3 +1,13 @@
+# Tugas Proyek Struktur Data Semester 4
+
+**Kelompok:** 4. 6  
+**Anggota:**  
+- Adillah Ridwan [M0403241072]
+- Tesalonika Natalie Sofi Siregar [M0403241185]  
+- Nadya Shafwah Rizalti	[M0403241007]  
+- Muhammad Rezonaldo Yunus [M0403241122]
+
+---
 # Topik 6: Sistem Rekomendasi Produk Berbasis Riwayat Transaksi
 
 **Konteks industri:** e-commerce
