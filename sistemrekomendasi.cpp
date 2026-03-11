@@ -7,8 +7,29 @@
 
 using namespace std;
 
+//struct dataset
+
+struct Order{
+    string order_id;
+    string order_date;
+    string customer_id;
+};
+
+struct Product{
+    string product_id;
+    string product_name;
+    string category;
+};
+
+struct OrderItem{
+    string order_id;
+    string product_id;
+    int quantity;
+};
+
+//Struct Transaction
 struct Transaction{
-    int transaction_id;
+    string transaction_id;
     string customer_id;
     string product_id;
     string product_name;
@@ -17,14 +38,100 @@ struct Transaction{
     string date;
 };
 
+unordered_map<string, Order> orders;
+unordered_map<string, Product> products;
+vector<OrderItem> orderItems;
+
 vector<Transaction> transactions;
 
-// index untuk mempercepat pencarian
+/* index untuk mempercepat search */
 unordered_map<string, vector<int>> customerIndex;
 unordered_map<string, vector<int>> productIndex;
 
 
-// INSERT TRANSACTION
+//load product
+
+void loadProducts(string filename){
+
+    ifstream file(filename);
+    string line;
+
+    getline(file,line); // skip header
+
+    while(getline(file,line)){
+
+        stringstream ss(line);
+
+        Product p;
+
+        getline(ss,p.product_id,',');
+        getline(ss,p.product_name,',');
+        getline(ss,p.category,',');
+
+        products[p.product_id] = p;
+    }
+
+    cout << "Products loaded : " << products.size() << endl;
+}
+
+
+// load orders
+
+void loadOrders(string filename){
+
+    ifstream file(filename);
+    string line;
+
+    getline(file,line);
+
+    while(getline(file,line)){
+
+        stringstream ss(line);
+
+        Order o;
+
+        getline(ss,o.order_id,',');
+        getline(ss,o.order_date,',');
+        getline(ss,o.customer_id,',');
+
+        orders[o.order_id] = o;
+    }
+
+    cout << "Orders loaded : " << orders.size() << endl;
+}
+
+
+// load orders item
+
+void loadOrderItems(string filename){
+
+    ifstream file(filename);
+    string line;
+
+    getline(file,line);
+
+    while(getline(file,line)){
+
+        stringstream ss(line);
+
+        OrderItem oi;
+        string data;
+
+        getline(ss,data,','); // order_item_id
+        getline(ss,oi.order_id,',');
+        getline(ss,oi.product_id,',');
+
+        getline(ss,data,',');
+        oi.quantity = stoi(data);
+
+        orderItems.push_back(oi);
+    }
+
+    cout << "Order items loaded : " << orderItems.size() << endl;
+}
+
+
+// insert transaction
 void insertTransaction(Transaction t){
 
     transactions.push_back(t);
@@ -36,11 +143,41 @@ void insertTransaction(Transaction t){
 }
 
 
-// SEARCH BY CUSTOMER
+//transaction data
+
+void buildTransactions(){
+
+    for(auto &oi : orderItems){
+
+        if(orders.find(oi.order_id) == orders.end()) continue;
+        if(products.find(oi.product_id) == products.end()) continue;
+
+        Order o = orders[oi.order_id];
+        Product p = products[oi.product_id];
+
+        Transaction t;
+
+        t.transaction_id = o.order_id;
+        t.customer_id = o.customer_id;
+        t.product_id = p.product_id;
+        t.product_name = p.product_name;
+        t.category = p.category;
+        t.quantity = oi.quantity;
+        t.date = o.order_date;
+
+        insertTransaction(t);
+    }
+
+    cout << "Transactions built : " << transactions.size() << endl;
+}
+
+
+//search by customer id
+
 void searchByCustomer(string customer){
 
     if(customerIndex.find(customer) == customerIndex.end()){
-        cout << "Customer tidak ditemukan\n";
+        cout << "Customer not found\n";
         return;
     }
 
@@ -55,63 +192,51 @@ void searchByCustomer(string customer){
 }
 
 
-// LOAD DATASET CSV
-void loadCSV(string filename){
+//search by product id
 
-    ifstream file(filename);
-    string line;
+void searchByProduct(string product){
 
-    getline(file,line); // skip header
+    if(productIndex.find(product) == productIndex.end()){
+        cout << "Product not found\n";
+        return;
+    }
 
-    while(getline(file,line)){
+    for(int idx : productIndex[product]){
 
-        stringstream ss(line);
-        string data;
+        Transaction t = transactions[idx];
 
-        Transaction t;
-
-        getline(ss,data,',');
-        t.transaction_id = stoi(data);
-
-        getline(ss,t.customer_id,',');
-
-        getline(ss,t.product_id,',');
-
-        getline(ss,t.product_name,',');
-
-        getline(ss,t.category,',');
-
-        getline(ss,data,',');
-        t.quantity = stoi(data);
-
-        getline(ss,t.date,',');
-
-        insertTransaction(t);
+        cout << t.transaction_id << " "
+             << t.customer_id << " "
+             << t.quantity << endl;
     }
 }
 
 
 int main(){
 
-    // ukur waktu insert dataset
     auto start = chrono::high_resolution_clock::now();
 
-    loadCSV("transactions.csv");
+    loadProducts("products.csv");
+    loadOrders("orders.csv");
+    loadOrderItems("order_items.csv");
+
+    buildTransactions();
 
     auto stop = chrono::high_resolution_clock::now();
 
     auto insertTime =
     chrono::duration_cast<chrono::milliseconds>(stop - start);
 
-    cout << "Insert Time : "
+    cout << "\nBuild Transaction Time : "
          << insertTime.count()
          << " ms\n";
 
 
-    // uji search
+    cout << "\nSearch by Customer 7318\n";
+
     start = chrono::high_resolution_clock::now();
 
-    searchByCustomer("C001");
+    searchByCustomer("7318");
 
     stop = chrono::high_resolution_clock::now();
 
@@ -120,5 +245,6 @@ int main(){
 
     cout << "Search Time : "
          << searchTime.count()
-         << " microseconds\n";
+         << " ms\n";
+
 }
