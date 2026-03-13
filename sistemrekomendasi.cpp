@@ -18,164 +18,145 @@ struct Transaction {
     string order_date;
 };
 
-/* LOAD CSV */
-
-vector<Transaction> loadCSV(const string& filename) {
+vector<Transaction> loadCSV(string filename){
 
     vector<Transaction> data;
-
     ifstream file(filename);
     string line;
 
-    getline(file, line); // skip header
+    getline(file,line); // skip header
 
-    while (getline(file, line)) {
+    while(getline(file,line)){
 
         stringstream ss(line);
         string token;
-
         Transaction t;
 
-        getline(ss, t.transaction_id, ',');
-        getline(ss, t.customer_id, ',');
-        getline(ss, t.product_id, ',');
-        getline(ss, t.product_name, ',');
-        getline(ss, t.category, ',');
-        getline(ss, token, ',');
+        getline(ss,t.transaction_id,',');
+        getline(ss,t.customer_id,',');
+        getline(ss,t.product_id,',');
+        getline(ss,t.product_name,',');
+        getline(ss,t.category,',');
+
+        getline(ss,token,',');
         t.quantity = stoi(token);
-        getline(ss, t.order_date, ',');
+
+        getline(ss,t.order_date);
 
         data.push_back(t);
     }
 
+    file.close();
     return data;
 }
 
+void benchmark(string filename){
 
-/* BENCHMARK FUNCTION */
-
-void benchmark(const string& csvFile) {
-
-    vector<Transaction> transactions = loadCSV(csvFile);
-
+    vector<Transaction> transactions = loadCSV(filename);
     int n = transactions.size();
 
-    if (n == 0) {
-        cout << "File kosong\n";
-        return;
-    }
+    cout << "\nTotal Data : " << n << endl;
 
-    /* target data terakhir (worst case) */
-
-    string targetId = transactions[n-1].transaction_id;
-
-    Transaction updatedT = transactions[n-1];
-    updatedT.product_name = "UPDATED_PRODUCT";
-
+    Transaction newT;
+    newT.transaction_id="NEWID";
+    newT.customer_id="CUSTX";
+    newT.product_id="PRODX";
+    newT.product_name="NewProduct";
+    newT.category="Test";
+    newT.quantity=1;
+    newT.order_date="2026-01-01";
 
     /* INSERT */
 
-    Transaction newT;
+    auto start = chrono::high_resolution_clock::now();
 
-    newT.transaction_id = "TEST999";
-    newT.customer_id = "CUST999";
-    newT.product_id = "PROD999";
-    newT.product_name = "TestProduct";
-    newT.category = "Test";
-    newT.quantity = 1;
-    newT.order_date = "2026-01-01";
+    for(int i=0;i<n;i++){
+        transactions.push_back(newT);
+    }
 
-    auto t1 = chrono::high_resolution_clock::now();
+    auto end = chrono::high_resolution_clock::now();
 
-    transactions.push_back(newT);
-
-    auto t2 = chrono::high_resolution_clock::now();
-
-    double insertMs =
-    chrono::duration<double, milli>(t2 - t1).count();
+    double insertTime =
+    chrono::duration<double,milli>(end-start).count();
 
 
     /* SEARCH */
 
-    auto t3 = chrono::high_resolution_clock::now();
+    string target = transactions[n-1].transaction_id;
 
-    for (auto it = transactions.begin(); it != transactions.end(); ++it) {
+    start = chrono::high_resolution_clock::now();
 
-        if (it->transaction_id == targetId) {
+    for(int i=0;i<n;i++){
+        if(transactions[i].transaction_id == target){
             break;
         }
     }
 
-    auto t4 = chrono::high_resolution_clock::now();
+    end = chrono::high_resolution_clock::now();
 
-    double searchMs =
-    chrono::duration<double, milli>(t4 - t3).count();
+    double searchTime =
+    chrono::duration<double,milli>(end-start).count();
 
 
     /* UPDATE */
 
-    auto t5 = chrono::high_resolution_clock::now();
+    start = chrono::high_resolution_clock::now();
 
-    for (auto it = transactions.begin(); it != transactions.end(); ++it) {
-
-        if (it->transaction_id == targetId) {
-
-            *it = updatedT;
-            break;
+    for(int i=0;i<n;i++){
+        if(transactions[i].transaction_id == target){
+            transactions[i].product_name="UPDATED";
         }
     }
 
-    auto t6 = chrono::high_resolution_clock::now();
+    end = chrono::high_resolution_clock::now();
 
-    double updateMs =
-    chrono::duration<double, milli>(t6 - t5).count();
+    double updateTime =
+    chrono::duration<double,milli>(end-start).count();
 
 
     /* DELETE */
 
-    auto t7 = chrono::high_resolution_clock::now();
+    start = chrono::high_resolution_clock::now();
 
-    for (auto it = transactions.begin(); it != transactions.end(); ++it) {
-
-        if (it->transaction_id == targetId) {
-
-            transactions.erase(it);
-            break;
-        }
+    for(int i=0;i<n/2;i++){
+        transactions.pop_back();
     }
 
-    auto t8 = chrono::high_resolution_clock::now();
+    end = chrono::high_resolution_clock::now();
 
-    double deleteMs =
-    chrono::duration<double, milli>(t8 - t7).count();
+    double deleteTime =
+    chrono::duration<double,milli>(end-start).count();
 
 
-    cout << fixed << setprecision(4);
+    /* SHOW (ITERATE ALL DATA) */
 
-    cout << "| " << setw(12) << n
-         << " | " << setw(10) << insertMs
-         << " | " << setw(10) << searchMs
-         << " | " << setw(10) << updateMs
-         << " | " << setw(10) << deleteMs
-         << " |" << endl;
+    start = chrono::high_resolution_clock::now();
+
+    for(auto &t : transactions){
+        volatile string x = t.product_name;
+    }
+
+    end = chrono::high_resolution_clock::now();
+
+    double showTime =
+    chrono::duration<double,milli>(end-start).count();
+
+
+    cout << "\nExecution Time Statistics (ms)\n";
+
+    cout << "Insert Time : " << insertTime << endl;
+    cout << "Search Time : " << searchTime << endl;
+    cout << "Update Time : " << updateTime << endl;
+    cout << "Delete Time : " << deleteTime << endl;
+    cout << "Show Time   : " << showTime << endl;
+
 }
 
-
-
-int main() {
-
-    cout << "\n=== BENCHMARK VECTOR (TRANSACTION DATASET) ===\n";
-
-    cout << "+--------------+------------+------------+------------+------------+\n";
-    cout << "| Jumlah Data  | Insert(ms) | Search(ms) | Update(ms) | Delete(ms) |\n";
-    cout << "+--------------+------------+------------+------------+------------+\n";
+int main(){
 
     benchmark("trans1000.csv");
     benchmark("trans10000.csv");
     benchmark("trans20000.csv");
 
-    cout << "+--------------+------------+------------+------------+------------+\n";
-
-    cout << "\nCatatan: Search, Update, Delete menggunakan transaction_id terakhir (worst case).\n";
-
+    return 0;
 }
